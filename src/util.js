@@ -44,10 +44,10 @@
       assert(isAlignedTo(byteOffset, ty.align.size), "unaligned byte offset " + byteOffset +
              " for type " + quote(ty) + " with alignment " + ty.align.size);
       address = forceType(
-        cast(new BinaryExpression("+",
-                                  address,
-                                  new Literal(byteOffset), address.loc),
-             Types.i32ty)
+        new BinaryExpression("+",
+                             address,
+                             new Literal(byteOffset), address.loc),
+        Types.i32ty
       );
     }
 
@@ -83,26 +83,19 @@
     return expr;
   }
 
-  function forceType(expr, type) {
-    // TODO: We need to check the type that we are converting from,
-    // because operators might change (like ~~ or |)
-
+  function forceType(expr, type, forceSigned) {
     if(type || expr.ty) {
-      //type = type || (expr.ty instanceof Types.PointerType ? expr.ty.base : expr.ty);
       type = type || expr.ty;
 
-      if(type instanceof Types.PointerType) {
-        return cast(new BinaryExpression('|', expr, new Literal(0)), expr.ty);
-      }
-      else if(type.numeric && !type.integral) {
+      if(type.numeric && !type.integral) {
         return cast(new UnaryExpression('+', expr), expr.ty);
       }
       else {
-        if(!type.signed) {
-          return cast(new BinaryExpression('>>>', expr, new Literal(0)), expr.ty);
+        if(type.signed || forceSigned || type instanceof Types.PointerType) {
+          return cast(new BinaryExpression('|', expr, new Literal(0)), expr.ty);
         }
         else {
-          return cast(new BinaryExpression('|', expr, new Literal(0)), expr.ty);
+          return cast(new BinaryExpression('>>>', expr, new Literal(0)), expr.ty);
         }
       }
     }

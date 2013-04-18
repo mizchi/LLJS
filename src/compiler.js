@@ -1281,6 +1281,11 @@
 
     var rty = expr.ty;
 
+    // TODO: this needs to be cleaned up. currently we produce too
+    // many annotaions (like `x | 0 | 0`) and it's generally unclear
+    // when the annotations are generated. clean the following code up
+    // and resolve any differences with `forceType` in util.js
+
     // asm.js requires every expression to be casted
     // if (this === rty) {
     //   return expr;
@@ -1741,9 +1746,10 @@
         var restoreStack = new AssignmentExpression(
             scope.frame.realSP(), "=", 
             forceType(
-                cast(new BinaryExpression(
+                new BinaryExpression(
                     "+", forceType(scope.frame.realSP()), literal(frameSize)
-                ), Types.u32ty)
+                ),
+                Types.i32ty
             )
         );
           exprList.push(restoreStack);
@@ -1754,14 +1760,13 @@
       }
       exprList.push(t);
 
-      // TODO: asm.js won't let you return unsigned, so we force
-      // unsigned to signed for now (why?!)
-      this.argument = forceType(cast(
-          new SequenceExpression(exprList, arg.loc),
-          arg.ty === Types.u32ty ? Types.i32ty : arg.ty,
-          false,
-          true
-      ));
+      // asm.js won't let you return unsigned, so we force
+      // a signed type (pass `true` as 3rd arg)
+      this.argument = forceType(
+        new SequenceExpression(exprList, arg.loc),
+        arg.ty,
+        true
+      );
     }
   };
 
