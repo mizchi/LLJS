@@ -1785,12 +1785,6 @@
     var arg = this.argument;
 
     if (this.operator === "*") {
-      // If the identifer has already been aligned, so we just need to
-      // pick out the unaligned address
-      if(arg.left instanceof BinaryExpression) {
-        arg.left = arg.left.left;
-      }
-
       return dereference(arg, 0, this.ty, o.scope, this.loc);
     }
 

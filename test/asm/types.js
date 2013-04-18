@@ -100,10 +100,10 @@ function main() {
   assertEqual(+F8[(($SP) + 64 | 0) >> 3], 1.6);
   assertEqual(+F8[((($SP) + 32 | 0) + 8 | 0) >> 3], 3.6);
   I4[(($SP) + 80 | 0) >> 2] = 512;
-  assertEqual(U1[((($SP) + 80 | 0) + 0) >> 0] >>> 0, 0);
-  assertEqual(U1[((($SP) + 80 | 0) + 1) >> 0] >>> 0, 2);
-  assertEqual(U1[((($SP) + 80 | 0) + 2) >> 0] >>> 0, 0);
-  assertEqual(U1[((($SP) + 80 | 0) + 3) >> 0] >>> 0, 0);
+  assertEqual(U1[(((($SP) + 80 | 0) | 0) + 0) >> 0] >>> 0, 0);
+  assertEqual(U1[(((($SP) + 80 | 0) | 0) + 1) >> 0] >>> 0, 2);
+  assertEqual(U1[(((($SP) + 80 | 0) | 0) + 2) >> 0] >>> 0, 0);
+  assertEqual(U1[(((($SP) + 80 | 0) | 0) + 3) >> 0] >>> 0, 0);
   U4[1] = (U4[1] | 0) + 88;
   return 0.0;
 }

@@ -62,7 +62,7 @@ function main() {
   assertEqual(I4[($SP) >> 2] | 0, 1);
   I4[(U4[(U4[(($SP) + 16 | 0) >> 2]) >> 2]) >> 2] = 12;
   assertEqual(I4[($SP) >> 2] | 0, 12);
-  assertEqual(I4[(U4[(U4[(($SP) | 0) >> 2]) >> 2]) >> 2] | 0, 12);
+  assertEqual(I4[(U4[(U4[(($SP) + 16 | 0) >> 2]) >> 2]) >> 2] | 0, 12);
   U4[1] = (U4[1] | 0) + 24;
   return 0.0;
 }
