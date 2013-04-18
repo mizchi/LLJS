@@ -10,6 +10,10 @@ var STACK_SIZE = 2 * MB;
 var HEAP_SIZE = SIZE - STACK_SIZE;
 var buffer = new ArrayBuffer(SIZE);
 
+if(typeof window !== 'undefined') {
+    window.asmBuffer = buffer;
+}
+
 var asm = (function (global, env, buffer) {
     "use asm";
 
@@ -44,6 +48,7 @@ var asm = (function (global, env, buffer) {
     var pow = global.Math.pow;
     var imul = global.Math.imul;
 
+var globalSP = 64;
 function main() {
   var x = 0, y = 0, z = 0, w = 0, $SP = 0;
   U4[1] = totalSize - 64;
@@ -57,7 +62,7 @@ function main() {
   assertEqual(I4[($SP) >> 2] | 0, 1);
   I4[(U4[(U4[(($SP) + 16 | 0) >> 2]) >> 2]) >> 2] = 12;
   assertEqual(I4[($SP) >> 2] | 0, 12);
-  assertEqual(I4[(U4[(U4[(($SP) + 16 | 0) >> 2]) >> 2]) >> 2] | 0, 12);
+  assertEqual(I4[(U4[(U4[(($SP) | 0) >> 2]) >> 2]) >> 2] | 0, 12);
   U4[1] = (U4[1] | 0) + 24;
   return 0.0;
 }

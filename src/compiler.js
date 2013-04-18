@@ -721,7 +721,7 @@
       'var',
       [new VariableDeclarator(new Identifier('globalSP'),
                               new Literal(this.frame.frameSize),
-                              Types.u32ty)]
+                              Types.i32ty)]
     );
 
     this.body.unshift(globalSP);
@@ -1076,7 +1076,7 @@
     if (this.callee instanceof Identifier && (ty = o.types[this.callee.name])) {
       var pty = new PointerType(ty)
       var allocation = new CallExpression(o.scope.MALLOC(),
-                                          [cast(literal(ty.size), Types.u32ty)], this.loc);
+                                          [cast(literal(ty.size), Types.i32ty)], this.loc);
       allocation = cast(allocation.transform(o), pty);
       // Check if we have a constructor ArrowType.
       if (ty instanceof StructType) {
@@ -1100,7 +1100,7 @@
                (ty = o.types[this.callee.object.name])) {
       var size = new BinaryExpression("*", literal(ty.size), this.callee.property, this.loc);
       var allocation = new CallExpression(o.scope.MALLOC(),
-                                          [cast(size, Types.u32ty)], this.loc);
+                                          [cast(size, Types.i32ty)], this.loc);
       return cast(allocation.transform(o), new PointerType(ty));
     }
     return Node.prototype.transform.call(this, o);
@@ -1424,7 +1424,7 @@
             this.base.align.size + "-byte aligned " + quote(Types.tystr(this, 0)), true);
     }
 
-    return forceType(expr, Types.u32ty);
+    return forceType(expr, Types.i32ty);
   };
 
   StructType.prototype.convert = function (expr) {
@@ -1746,14 +1746,22 @@
                 ), Types.u32ty)
             )
         );
-        exprList.push(restoreStack);
+          exprList.push(restoreStack);
       }
       if(o.memcheck) {
         var popMemcheck = new CallExpression(scope.MEMCHECK_CALL_POP(), []);
         exprList.push(popMemcheck);
       }
       exprList.push(t);
-      this.argument = new SequenceExpression(exprList, arg.loc);
+
+      // TODO: asm.js won't let you return unsigned, so we force
+      // unsigned to signed for now (why?!)
+      this.argument = forceType(cast(
+          new SequenceExpression(exprList, arg.loc),
+          arg.ty === Types.u32ty ? Types.i32ty : arg.ty,
+          false,
+          true
+      ));
     }
   };
 

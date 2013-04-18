@@ -53,7 +53,7 @@
 
     // asm.js requires a byte pointer to be shifted the appropriate
     // amount to access typed arrays
-   
+
     address = new BinaryExpression(
       ">>",
       address,
@@ -73,7 +73,8 @@
 
     var expr;
     if (ty instanceof Types.ArrayType) {
-      expr = address;
+      // Remove the bitshift to access the raw byte pointer
+      expr = address.left;
     } else {
       expr = new MemberExpression(scope.getView(ty), address, true, loc);
     }
@@ -83,14 +84,26 @@
   }
 
   function forceType(expr, type) {
+    // TODO: We need to check the type that we are converting from,
+    // because operators might change (like ~~ or |)
+
     if(type || expr.ty) {
-      type = type || (expr.ty instanceof Types.PointerType ? expr.ty.base : expr.ty);
-      
-      if(type.numeric && !type.integral) {
+      //type = type || (expr.ty instanceof Types.PointerType ? expr.ty.base : expr.ty);
+      type = type || expr.ty;
+
+      if(type instanceof Types.PointerType) {
+        return cast(new BinaryExpression('|', expr, new Literal(0)), expr.ty);
+      }
+      else if(type.numeric && !type.integral) {
         return cast(new UnaryExpression('+', expr), expr.ty);
       }
       else {
-        return cast(new BinaryExpression('|', expr, new Literal(0)), expr.ty);
+        if(!type.signed) {
+          return cast(new BinaryExpression('>>>', expr, new Literal(0)), expr.ty);
+        }
+        else {
+          return cast(new BinaryExpression('|', expr, new Literal(0)), expr.ty);
+        }
       }
     }
 
