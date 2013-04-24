@@ -45,6 +45,7 @@
   const UnaryExpression = T.UnaryExpression;
   const NewExpression = T.NewExpression;
   const UpdateExpression = T.UpdateExpression;
+  const LogicalExpression = T.LogicalExpression;
   const ForStatement = T.ForStatement;
   const BlockStatement = T.BlockStatement;
   const CatchClause = T.CatchClause;
@@ -420,6 +421,18 @@
 
     scope.addVariable(
         scope.freshVariable("sqrt", new Types.ArrowType([Types.f32ty], Types.f32ty)), true
+    );
+
+    scope.addVariable(
+        scope.freshVariable("abs", new Types.ArrowType([Types.f32ty], Types.f32ty)), true
+    );
+
+    scope.addVariable(
+        scope.freshVariable("sin", new Types.ArrowType([Types.f32ty], Types.f32ty)), true
+    );
+
+    scope.addVariable(
+        scope.freshVariable("cos", new Types.ArrowType([Types.f32ty], Types.f32ty)), true
     );
 
     logger.push(this);
@@ -940,8 +953,8 @@
   };
 
   const BINOP_ARITHMETIC = ["+", "-", "*", "/", "%"];
-  const BINOP_BITWISE    = ["<<", ">>", ">>>", "~", "&", "|"]
-  const BINOP_COMPARISON = ["==", "!=", "===", "!==", "<", ">", "<=", ">="]
+  const BINOP_BITWISE    = ["<<", ">>", ">>>", "~", "&", "|"];
+  const BINOP_COMPARISON = ["==", "!=", "===", "!==", "<", ">", "<=", ">="];
 
   ConditionalExpression.prototype.transformNode = function (o) {
     var ty;
