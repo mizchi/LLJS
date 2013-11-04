@@ -79,14 +79,14 @@ asmtest_test/asm/%.js: test/asm/%.js
 	@echo "Spidermonkey:"
 	$(SPIDERMONKEY_ENGINE) $< 2>.asm.output
 	@cat .asm.output
-	@cat .asm.output | grep 'Success' >/dev/null
+	@cat .asm.output | grep -i 'success' >/dev/null
 	@rm .asm.output
 
 asmclean:
 	rm $(asmtestfiles)
 
 test/asm/%.js: test/asm/%.ljs
-	$(LJC) $(ND_FLAGS) -o $@ $<
+	$(LJC) $(ND_FLAGS) -a -o $@ $<
 
 # main
 $(srcdir)/memory.js: $(srcdir)/memory.ljs

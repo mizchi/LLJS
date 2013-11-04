@@ -1020,7 +1020,8 @@
           // requires a call to `imul` instead. See
           // http://asmjs.org/spec/latest/#intish
           return cast(new CallExpression(new Identifier('imul'), [this.left, this.right]),
-                      Types.i32ty);
+                      Types.i32ty,
+                      true);
         }
 
         this.left = cast(this.left, lty, true, true);
@@ -1793,7 +1794,8 @@
       if (rty instanceof PrimitiveType && rty.integral) {
         var scale = lty.base.size;
         if (scale > 1) {
-          this.right = new BinaryExpression("*", this.right, literal(scale), this.right.loc);
+          this.right = forceType(cast(new BinaryExpression("*", this.right, literal(scale), this.right.loc),
+                                      Types.i32ty));
         }
       }
     }
