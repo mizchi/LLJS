@@ -11,6 +11,15 @@ var HEAP_SIZE = SIZE - STACK_SIZE;
 var buffer = new ArrayBuffer(SIZE);
 
 if(typeof window !== 'undefined') {
+    window.U1 = new Uint8Array(buffer);
+    window.I1 = new Int8Array(buffer);
+    window.U2 = new Uint16Array(buffer);
+    window.I2 = new Int16Array(buffer);
+    window.U4 = new Uint32Array(buffer);
+    window.I4 = new Int32Array(buffer);
+    window.F4 = new Float32Array(buffer);
+    window.F8 = new Float64Array(buffer);
+
     window.asmBuffer = buffer;
 }
 

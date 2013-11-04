@@ -63,8 +63,8 @@ function double main() {
 
   let Value v;
   v.x = 512;
-  assertEqual(v.byte[0], 0);
-  assertEqual(v.byte[1], 2);
-  assertEqual(v.byte[2], 0);
-  assertEqual(v.byte[3], 0);
+  assertEqual(int(v.byte[0]), 0);
+  assertEqual(int(v.byte[1]), 2);
+  assertEqual(int(v.byte[2]), 0);
+  assertEqual(int(v.byte[3]), 0);
 }

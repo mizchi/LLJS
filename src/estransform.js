@@ -295,6 +295,11 @@
     CastExpression: {
       extends: "Expression",
       fields: ["@as", "@argument"]
+    },
+
+    ImportExpression: {
+      extends: "Node",
+      fields: ["imports", "from"]
     }
   };
 

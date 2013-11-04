@@ -52,6 +52,7 @@
   const ThisExpression = T.ThisExpression;
   const TypeAliasDirective = T.TypeAliasDirective;
   const CastExpression = T.CastExpression;
+  const ImportExpression = T.ImportExpression;
 
   function literal(x) {
     return new Literal(x);
@@ -445,7 +446,7 @@
   MemberDeclarator.prototype.scan = function (o) {
     if (this.declarator instanceof FunctionDeclaration) {
       this.declarator.scan(o);
-    }
+     }
   };
 
   TypeAliasDirective.prototype.scan = function (o) {
@@ -537,7 +538,7 @@
     var name = this.id.name;
     var ty = this.decltype ? this.decltype.reflect(o) : undefined;
 
-     check(!scope.getVariable(name, true),
+    check(!scope.getVariable(name, true),
           "Variable " + quote(name) + " is already declared in local scope.");
 
     scope.addVariable(new Variable(name, ty), o.declkind === "extern");
@@ -730,14 +731,16 @@
     this.body = compileList(decls.concat(body), o);
     this.frame.close();
 
-    var globalSP = new VariableDeclaration(
-      'var',
-      [new VariableDeclarator(new Identifier('globalSP'),
-                              new Literal(this.frame.frameSize),
-                              Types.i32ty)]
-    );
+    if(o.asmjs) {
+      var globalSP = new VariableDeclaration(
+        'var',
+        [new VariableDeclarator(new Identifier('globalSP'),
+                                new Literal(this.frame.frameSize),
+                                Types.i32ty)]
+      );
 
-    this.body.unshift(globalSP);
+      this.body.unshift(globalSP);
+    }
     return this;
   };
 
@@ -815,22 +818,29 @@
       var scope = o.scope;
       var variable = scope.getVariable(this.name);
 
-      check(variable, "unknown identifier " + quote(this.name) + " in scope " + scope);
+      if(o.asmjs) {
+        check(variable, "unknown identifier " + quote(this.name) + " in scope " + scope);
+      }
       // if (!(variable.type instanceof StructStaticType)) {
       //   check(variable.isStackAllocated ? variable.frame === scope.frame : true,
       //         "cannot close over stack-allocated variables");
       // }
 
-      this.name = variable.name;
-      this.variable = variable;
+      if(variable) {
+        this.name = variable.name;
+        this.variable = variable;
 
-      return cast(this, variable.type);
+        return cast(this, variable.type);
+      }
     }
   };
 
   VariableDeclaration.prototype.transform = function (o) {
     if (this.kind === "extern") {
       return null;
+    }
+    else if(!this.declarations[0].decltype) {
+        return;
     }
 
     var decl, decls = this.declarations;
@@ -864,7 +874,12 @@
     var type = variable.type;
 
     if (!type) {
-      throw new Error('variable types required');
+        if(this.init) {
+            return new AssignmentExpression(this.id, "=", this.init, this.init.loc).transform(o);
+        }
+        else {
+            return null;
+        }
     }
 
     if (this.arguments) {
@@ -1230,7 +1245,6 @@
   };
 
   CallExpression.prototype.transformNode = function (o) {
-
     if (this.callee instanceof MemberFunctionCall) {
       var obj = this.callee.object;
       var member = this.callee.member;
@@ -1245,19 +1259,27 @@
     var args = this.arguments;
 
     if (!fty) {
-      for(var i=0; i<args.length; i++) {
-        var unary = args[i] instanceof UnaryExpression;
-
-        // TODO: clean up this hack. if we are calling a function and
-        // don't know its types (extern), force the types only on
-        // certain expressions to make asm.js happy
-        if(args[i] instanceof Identifier ||
-           (unary && args[i].operator == '*' ||
-            unary && args[i].operator == '&')) {
-          args[i] = forceType(args[i]);
-        }
+      if(this.callee instanceof Identifier &&
+         o.types[this.callee.name]) {
+        fty = o.types[this.callee.name];
       }
-      return;
+      else {
+        for(var i=0; i<args.length; i++) {
+          var unary = args[i] instanceof UnaryExpression;
+
+          if(o.asmjs) {
+            // TODO: clean up this hack. if we are calling a function and
+            // don't know its types (extern), force the types only on
+            // certain expressions to make asm.js happy
+            if(args[i] instanceof Identifier ||
+               (unary && args[i].operator == '*' ||
+                unary && args[i].operator == '&')) {
+              args[i] = forceType(args[i]);
+            }
+          }
+        }
+        return;
+      }
     }
 
     check(fty instanceof ArrowType, "trying to call non-function type");
@@ -1283,7 +1305,25 @@
       }
     }
 
-    return cast(this, fty.returnType);
+    return forceType(this, fty.returnType);
+  };
+
+  ImportExpression.prototype.transformNode = function(o) {
+    var from = this.from.value;
+    var decls = [];
+
+    for(var i=0; i<this.imports.length; i++) {
+      var name = this.imports[i].name;
+
+      if(o.types[name] instanceof Types.ArrowType) {
+        decls.push(new VariableDeclarator(
+          new Identifier(name),
+          new MemberExpression(new Identifier(from),
+                               new Identifier(name))));
+      }
+    }
+
+    return decls.length ? new VariableDeclaration('var', decls) : null;
   };
 
   /**
@@ -1504,11 +1544,16 @@
       var ty = variable.type;
 
       // Don't process the `this` variable or any of the arguments
-      if(variable.name != 'this' &&
+      if(ty &&
+         (!(ty instanceof Types.ArrowType) || ty.returnType) &&
+         variable.name != 'this' &&
          node.parameters.indexOf(variable) === -1) {
+
+          
+
         var decl = new VariableDeclarator(new Identifier(variable.name),
-                                          new Literal(ty.defaultValue || 0));
-        if(ty.numeric && !ty.integral) {
+                                          new Literal((ty && ty.defaultValue) || 0));
+        if(ty && ty.numeric && !ty.integral) {
           decl.init.forceDouble = true;
         }
 
@@ -1516,8 +1561,11 @@
       }
     }
 
-    decls.push(new VariableDeclarator(new Identifier('$SP'), new Literal(0)));
-    return new VariableDeclaration("var", decls);
+    if(o.asmjs) {
+      decls.push(new VariableDeclarator(new Identifier('$SP'), new Literal(0)));
+    }
+
+    return decls.length && new VariableDeclaration("var", decls);
   }
 
   function createPrologue(node, o) {
@@ -1544,6 +1592,10 @@
       for (var i = 0, j = params.length; i < j; i++) {
         var p = params[i];
         var ty = p.type;
+          
+        if(!ty) {
+          continue;
+        }
 
         if(ty.name == 'f32' || ty.name == 'f64') {
           var assn = new AssignmentExpression(
@@ -1574,9 +1626,12 @@
       }
     }
 
-    code.push(createVariableDecls(node, o));
+    var decls = createVariableDecls(node, o);
+    if(decls) {
+      code.push(decls);
+    }
 
-    if(node.id.name == 'main') {
+    if(node.id && node.id.name == 'main') {
       code = code.concat(addMainInitializers(node, o));
     }
 
@@ -1614,12 +1669,14 @@
                                  literal(frameSize))))
       ];
 
-      var unifyRetType = new ReturnStatement(
-        new Literal(node.ty.returnType.integral ? 0 : 0.0)
-      );
-      unifyRetType.argument.forceDouble = !node.ty.returnType.integral;
+      if(node.ty.returnType) {
+        var unifyRetType = new ReturnStatement(
+          new Literal(node.ty.returnType.integral ? 0 : 0.0)
+        );
+        unifyRetType.argument.forceDouble = !node.ty.returnType.integral;
 
-      exprs.push(unifyRetType);
+        exprs.push(unifyRetType);
+      }
       return exprs;
     }
     return [];
@@ -1756,7 +1813,7 @@
       var t = scope.freshTemp(arg.ty, arg.loc);
       var assn = new AssignmentExpression(t, "=", arg, arg.loc);
       var exprList = [assn];
-      if(frameSize) {
+      if(o.asmjs && frameSize) {
         var restoreStack = new AssignmentExpression(
             scope.frame.realSP(), "=", 
             forceType(
@@ -1887,7 +1944,40 @@
 
   var logger;
 
-  function compile(node, name, _logger, options) {
+  function getTypes(names, node, _types, _logger) {
+    logger = _logger;
+
+    node = T.lift(node);
+    var types = _types || Types.builtinTypes;
+    var imported = resolveAndLintTypes(node, clone(types));
+
+    for(var i=0; i<names.length; i++) {
+      var name = names[i];
+      if(imported[name]) {
+        types[name] = imported[name];
+      }
+    }
+
+    node.scan({ types: types });
+
+    for(var i=0, l=node.body.length; i<l; i++) {
+      var expr = node.body[i];
+
+      if(expr instanceof FunctionDeclaration && names.indexOf(expr.id.name) !== -1) {
+        types[expr.id.name] = expr.decltype.reflect({ types: types, warn: true });
+      }
+    }
+
+    for(var i=0; i<names.length; i++) {
+      if(!types[names[i]]) {
+        throw new Error('imported type not found: ' + names[i]);
+      }
+    }
+
+    return types;
+  }
+
+  function compile(node, name, _logger, options, types) {
     // The logger is closed over by all the functions.
     logger = _logger;
 
@@ -1899,8 +1989,9 @@
 
     // Pass 1.
     logger.info("Pass 1");
-    var types = resolveAndLintTypes(node, clone(Types.builtinTypes));
-    var o = { types: types, name: name, logger: _logger, warn: warningOptions(options), memcheck: options.memcheck };
+    types = resolveAndLintTypes(node, types || clone(Types.builtinTypes));
+    var o = { types: types, name: name, logger: _logger, memcheck: false, 
+              asmjs: options.asmjs, warn: warningOptions(options) };
 
     // Pass 2.
     logger.info("Pass 2");
@@ -1920,6 +2011,7 @@
     };
   }
 
+  exports.getTypes = getTypes;
   exports.compile = compile;
 
 })(typeof exports === 'undefined' ? (compiler = {}) : exports);

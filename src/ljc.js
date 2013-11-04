@@ -113,6 +113,7 @@
 
   function cli() {
     var optparser = new util.OptParser([
+      ["a",           "asmjs",        "", "Compile as asm.js module"],
       ["m",           "module-name",  "", "Export asm module as this name"],
       ["e",           "exported-funcs", "main", "Functions to export from the asm module (comma-delimited)"],
       ["E",           "only-parse",   false, "Only parse"],
@@ -195,12 +196,25 @@
 
     try {
       var node = esprima.parse(source, { loc: true, comment: true, range: true, tokens: true });
-      node = escodegen.attachComments(node, node.comments, node.tokens);
+      //node = escodegen.attachComments(node, node.comments, node.tokens);
+      var types = null;
+
+      for(var i=0; i<node.body.length; i++) {
+          var expr = node.body[i];
+
+          if(expr.type == 'ImportExpression') {
+            var importSource = snarf('./' + expr.from.value + '.ljs');
+            var importNode = esprima.parse(importSource, { tokens: true });
+
+            types = compiler.getTypes(expr.imports.map(function(x) { return x.name; }),
+                                      importNode, types, logger);
+          }
+      }
 
       if (options["only-parse"]) {
         code = node;
       } else {
-        var data = compiler.compile(node, options.filename, logger, options);
+        var data = compiler.compile(node, options.filename, logger, options, types);
         var externs = data.externs;
         var exports = options['exported-funcs'].split(',');
         node = data.node;
@@ -208,31 +222,37 @@
         if (options["emit-ast"]) {
           code = node;
         } else {
-          code = snarf(__dirname + '/template/header.js').toString().replace(
-            '{% imports %}',
-            externs.map(function(e) {
-              return 'var ' + e + ' = env.' + e + ';';
-            }).join('\n')
-          );
+          code = '';
+
+          if(options.asmjs) {
+            code += snarf(__dirname + '/template/header.js').toString().replace(
+              '{% imports %}',
+              externs.map(function(e) {
+                return 'var ' + e + ' = env.' + e + ';';
+              }).join('\n')
+            );
+          }
 
           code += escodegen.generate(node, { base: "", indent: "  ", comment: true });
 
-          code += snarf(__dirname + '/template/footer.js').toString().replace(
-            '{% externs %}',
-            externs.map(function(e) {
-              return e + ': ' + e + ',';
-            }).join('\n')
-          ).replace(
-            '{% exports %}',
-            exports.map(function(e) {
-              return e + ': ' + e;
-            }).join(',\n')
-          ).replace(
-            '{% finalize %}',
-            (options['module-name'] ?
-             'window.' + options['module-name'] + ' = asm;' :
-             'asm.main();')
-          );
+          if(options.asmjs) {
+            code += snarf(__dirname + '/template/footer.js').toString().replace(
+              '{% externs %}',
+              externs.map(function(e) {
+                return e + ': ' + e + ',';
+              }).join('\n')
+            ).replace(
+              '{% exports %}',
+              exports.map(function(e) {
+                return e + ': ' + e;
+              }).join(',\n')
+            ).replace(
+              '{% finalize %}',
+              (options['module-name'] ?
+               'window.' + options['module-name'] + ' = asm;' :
+               'asm.main();')
+            );
+          }
         }
       }
     } catch (e) {

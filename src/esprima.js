@@ -128,7 +128,9 @@
     TypeIdentifier: 'TypeIdentifier',
     MemberDeclarator: 'MemberDeclarator',
     TypeAliasDirective: 'TypeAliasDirective',
-    CastExpression: 'CastExpression'
+    CastExpression: 'CastExpression',
+
+    ImportExpression: 'ImportExpression'
   };
 
   PropertyKind = {
@@ -258,7 +260,6 @@
     case 'enum':
     case 'export':
     case 'extends':
-    case 'import':
     case 'super':
       return true;
     }
@@ -318,7 +319,7 @@
       keyword = (id === 'var') || (id === 'for') || (id === 'new') || (id === 'try');
       break;
     case 4:
-      keyword = (id === 'this') || (id === 'else') || (id === 'case') || (id === 'void') || (id === 'with');
+      keyword = (id === 'this') || (id === 'else') || (id === 'case') || (id === 'void') || (id === 'with') || (id === 'from');
       break;
     case 5:
       keyword = (id === 'while') || (id === 'break') || (id === 'catch') || (id === 'throw') || (id === 'union') ||
@@ -326,7 +327,8 @@
       break;
     case 6:
       keyword = (id === 'return') || (id === 'typeof') || (id === 'delete') || (id === 'switch') ||
-                (id === 'struct') || (id === 'sizeof') || (id === 'extern') || (id === 'public') || (id === 'static');
+                (id === 'struct') || (id === 'sizeof') || (id === 'extern') || (id === 'public') || (id === 'static') ||
+                (id === 'import');
       break;
     case 7:
       keyword = (id === 'default') || (id === 'finally') || (id === 'typedef') || (id === 'private');
@@ -2352,11 +2354,11 @@
   // and http://wiki.ecmascript.org/doku.php?id=harmony:let
   function parseConstLetExternDeclaration(kind) {
     var declarations;
-
+      
     expectKeyword(kind);
 
     declarations = parseVariableDeclarationList(
-        kind, undefined, parseTypeIdentifier(kind != 'extern')
+        kind, undefined, parseTypeIdentifier()
     );
 
     consumeSemicolon();
@@ -2481,7 +2483,7 @@
 
   function parseForVariableDeclaration() {
     var token = lex();
-    var typeIdentifier = parseTypeIdentifier(true);
+    var typeIdentifier = parseTypeIdentifier();
     var result = {
       type: Syntax.VariableDeclaration,
       declarations: parseVariableDeclarationList(undefined, undefined, typeIdentifier),
@@ -2969,6 +2971,8 @@
         return parseWhileStatement();
       case 'with':
         return parseWithStatement();
+      case 'import':
+        return parseImportStatement();
       default:
         break;
       }
@@ -3129,7 +3133,7 @@
                                                            parseStructType()));
       } else {
         list.push.apply(list, parseVariableDeclarationList(undefined, true,
-                                                           parseTypeIdentifier(true)));
+                                                           parseTypeIdentifier()));
       }
       members.push.apply(members, list.map(function (x) {
         return {
@@ -3847,6 +3851,38 @@
       advance = extra.advance;
       scanRegExp = extra.scanRegExp;
     }
+  }
+
+  // LLJS
+  function parseImportStatement() {
+    var imports = [];
+
+    expectKeyword('import');
+    expect('{');
+
+    while (index < length) {
+      imports.push(parseVariableIdentifier());
+      if(!match(',')) {
+        break;
+      }
+      lex();
+    }
+
+    expect('}');
+    expectKeyword('from');
+
+    var from = lex();
+    if(from.type != Token.StringLiteral) {
+      throwError(from, Messages.UnexpectedToken, 'ILLEGAL');
+    }
+
+    consumeSemicolon();
+
+    return {
+      type: Syntax.ImportExpression,
+      imports: imports,
+      from: from
+    };
   }
 
   function stringToArray(str) {

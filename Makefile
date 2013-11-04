@@ -20,8 +20,8 @@ nodefiles := $(addprefix $(build_node)/, $(js_files))
 smfiles := $(addprefix $(build_sm)/, $(js_files))
 
 V8_ENGINE ?= node
-SPIDERMONKEY_ENGINE ?= js
-SPIDERMONKEY_ENGINE_NOASM ?= js
+SPIDERMONKEY_ENGINE ?= ~/projects/jsshell/js
+SPIDERMONKEY_ENGINE_NOASM ?= ~/projects/jsshell/js
 
 
 .PHONY: all test clean node sm bench main

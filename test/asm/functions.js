@@ -11,6 +11,15 @@ var HEAP_SIZE = SIZE - STACK_SIZE;
 var buffer = new ArrayBuffer(SIZE);
 
 if(typeof window !== 'undefined') {
+    window.U1 = new Uint8Array(buffer);
+    window.I1 = new Int8Array(buffer);
+    window.U2 = new Uint16Array(buffer);
+    window.I2 = new Int16Array(buffer);
+    window.U4 = new Uint32Array(buffer);
+    window.I4 = new Int32Array(buffer);
+    window.F4 = new Float32Array(buffer);
+    window.F8 = new Float64Array(buffer);
+
     window.asmBuffer = buffer;
 }
 
@@ -58,14 +67,13 @@ function square(x, y) {
   x = +x;
   y = +y;
   var $SP = 0;
-  // add1 takes an integer, so it rounds the result
-  return +(x * x + +(add1(~~(y * y)) | 0));
+  return +(x * x + +(add1(~~(y * y)) | 0 | 0));
 }
 function main() {
   var $SP = 0;
   U4[1] = totalSize - 64;
   U4[0] = 4;
-  assertEqual(square(2.3, 4.5), 26.29);
+  assertEqual(+square(2.3, 4.5), 26.29);
 }
     function memcpy(dest, src, num) {
         dest = dest|0; src = src|0; num = num|0;

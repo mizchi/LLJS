@@ -11,6 +11,15 @@ var HEAP_SIZE = SIZE - STACK_SIZE;
 var buffer = new ArrayBuffer(SIZE);
 
 if(typeof window !== 'undefined') {
+    window.U1 = new Uint8Array(buffer);
+    window.I1 = new Int8Array(buffer);
+    window.U2 = new Uint16Array(buffer);
+    window.I2 = new Int16Array(buffer);
+    window.U4 = new Uint32Array(buffer);
+    window.I4 = new Int32Array(buffer);
+    window.F4 = new Float32Array(buffer);
+    window.F8 = new Float64Array(buffer);
+
     window.asmBuffer = buffer;
 }
 
@@ -74,8 +83,8 @@ function foo() {
   U4[1] = (U4[1] | 0) - 48;
   $SP = U4[1] | 0;
   (Point$Point(($SP) | 0 | 0, 5.5, 6.6), F8[($SP) >> 3]);
-  (Point$Point(($SP) + 16 | 0 | 0, 7.7, 8.8), F8[(($SP) + 16 | 0) >> 3]);
-  (Point$Point(($SP) + 32 | 0 | 0, 9.9, 1.1), F8[(($SP) + 32 | 0) >> 3]);
+  (Point$Point(($SP) + 16 | 0 | 0, 7.7, 8.8) >>> 0, F8[(($SP) + 16 | 0) >> 3]);
+  (Point$Point(($SP) + 32 | 0 | 0, 9.9, 1.1) >>> 0, F8[(($SP) + 32 | 0) >> 3]);
   return +(_ = +(+F8[(($SP) + 16 | 0) >> 3] + +F8[((($SP) + 32 | 0) + 8 | 0) >> 3]), U4[1] = (U4[1] | 0) + 48 | 0, _);
   U4[1] = (U4[1] | 0) + 48;
   return 0.0;
@@ -86,24 +95,24 @@ function main() {
   U4[0] = 4;
   U4[1] = (U4[1] | 0) - 88;
   $SP = U4[1] | 0;
-  (Point$Point(($SP) | 0 | 0, 1.2, 3.4), F8[($SP) >> 3]);
-  (Point$Point(($SP) + 16 | 0 | 0, 1.3, 3.5), F8[(($SP) + 16 | 0) >> 3]);
-  (Point$Point(($SP) + 32 | 0 | 0, 1.4, 3.6), F8[(($SP) + 32 | 0) >> 3]);
-  (Point$Point(($SP) + 48 | 0 | 0, 1.5, 3.7), F8[(($SP) + 48 | 0) >> 3]);
-  (Point$Point(($SP) + 64 | 0 | 0, 1.6, 3.8), F8[(($SP) + 64 | 0) >> 3]);
+  (Point$Point(($SP) | 0 | 0, 1.2, 3.4) >>> 0, F8[($SP) >> 3]);
+  (Point$Point(($SP) + 16 | 0 | 0, 1.3, 3.5) >>> 0, F8[(($SP) + 16 | 0) >> 3]);
+  (Point$Point(($SP) + 32 | 0 | 0, 1.4, 3.6) >>> 0, F8[(($SP) + 32 | 0) >> 3]);
+  (Point$Point(($SP) + 48 | 0 | 0, 1.5, 3.7) >>> 0, F8[(($SP) + 48 | 0) >> 3]);
+  (Point$Point(($SP) + 64 | 0 | 0, 1.6, 3.8) >>> 0, F8[(($SP) + 64 | 0) >> 3]);
   assertEqual(+F8[(($SP) + 64 | 0) >> 3], 1.6);
   assertEqual(+F8[((($SP) + 32 | 0) + 8 | 0) >> 3], 3.6);
   p = ($SP) + 16 | 0 | 0;
   assertEqual(+F8[(p) >> 3], 1.3);
-  assertEqual(foo(), 8.8);
-  assertEqual(bar(($SP) | 0), 6.2);
+  assertEqual(+foo(), 8.8);
+  assertEqual(+bar(($SP) | 0), 6.2);
   assertEqual(+F8[(($SP) + 64 | 0) >> 3], 1.6);
   assertEqual(+F8[((($SP) + 32 | 0) + 8 | 0) >> 3], 3.6);
   I4[(($SP) + 80 | 0) >> 2] = 512;
-  assertEqual(U1[(((($SP) + 80 | 0) | 0) + 0) >> 0] >>> 0, 0);
-  assertEqual(U1[(((($SP) + 80 | 0) | 0) + 1) >> 0] >>> 0, 2);
-  assertEqual(U1[(((($SP) + 80 | 0) | 0) + 2) >> 0] >>> 0, 0);
-  assertEqual(U1[(((($SP) + 80 | 0) | 0) + 3) >> 0] >>> 0, 0);
+  assertEqual(U1[(((($SP) + 80 | 0) | 0) + 0) >> 0] | 0, 0);
+  assertEqual(U1[(((($SP) + 80 | 0) | 0) + 1) >> 0] | 0, 2);
+  assertEqual(U1[(((($SP) + 80 | 0) | 0) + 2) >> 0] | 0, 0);
+  assertEqual(U1[(((($SP) + 80 | 0) | 0) + 3) >> 0] | 0, 0);
   U4[1] = (U4[1] | 0) + 88;
   return 0.0;
 }

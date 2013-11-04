@@ -11,6 +11,15 @@ var HEAP_SIZE = SIZE - STACK_SIZE;
 var buffer = new ArrayBuffer(SIZE);
 
 if(typeof window !== 'undefined') {
+    window.U1 = new Uint8Array(buffer);
+    window.I1 = new Int8Array(buffer);
+    window.U2 = new Uint16Array(buffer);
+    window.I2 = new Int16Array(buffer);
+    window.U4 = new Uint32Array(buffer);
+    window.I4 = new Int32Array(buffer);
+    window.F4 = new Float32Array(buffer);
+    window.F8 = new Float64Array(buffer);
+
     window.asmBuffer = buffer;
 }
 
@@ -61,18 +70,15 @@ function main() {
   assertEqual(4, 4);
   assertEqual(4, 4);
   assertEqual(8, 8);
-  assertEqual(-1 & 255, 255);
   assertEqual(-1, -1);
-  assertEqual(-1 & 65535, 65535);
   assertEqual(-1, -1);
-  assertEqual(-1 >>> 0, 4294967295);
   assertEqual(-1, -1);
   x = 8;
   y = 6;
   assertEqual((x | 0) + (y | 0) | 0, 14);
   assertEqual((x | 0) - (y | 0) | 0, 2);
   assertEqual((x | 0) / (y | 0) | 0, 1);
-  assertEqual(imul(x, y), 48);
+  assertEqual(imul(x, y) | 0, 48);
   assertEqual((x | 0) % (y | 0) | 0, 2);
   z = 5.1;
   w = +6.0;
@@ -80,21 +86,17 @@ function main() {
   assertEqual(z - w, -0.9);
   assertEqual(z / w, 0.85);
   assertEqual(z * w, 30.6);
-  // mixing ints and doubles coerces everything to doubles
   assertEqual(z * +(x | 0), 40.8);
-  // while loop
   x = 0;
   y = 1;
   while ((x | 0) < 10) {
     x = (x | 0) + 1 | 0;
-    y = imul(y, 2);
+    y = imul(y, 2) | 0;
   }
   assertEqual(y | 0, 1024);
-  // for loop
   y = 1;
-  // only works when declaring outside loop (for now)
   for (i = 0; (i | 0) < 10; _ = i, i = (i | 0) + 1 | 0, _) {
-    y = imul(y, 2);
+    y = imul(y, 2) | 0;
   }
   assertEqual(y | 0, 1024);
 }
