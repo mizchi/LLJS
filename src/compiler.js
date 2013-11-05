@@ -1083,7 +1083,7 @@
       if (arg.variable) {
         arg.variable.isStackAllocated = true;
       }
-      return cast(this, new PointerType(ty));
+      return cast(this, new PointerType(ty), true);
     }
 
     if (op === "!" || op === "~") {
@@ -1670,9 +1670,11 @@
                                  literal(frameSize))))
       ];
 
-      if(node.ty.returnType && node.ty.returnType != Types.voidTy) {
+      var retType = node.ty.returnType;
+
+      if(retType && retType != Types.voidTy) {
         var unifyRetType = new ReturnStatement(
-          new Literal(node.ty.returnType.integral ? 0 : 0.0)
+          new Literal((retType.integral || retType instanceof Types.PointerType) ? 0 : 0.0)
         );
         unifyRetType.argument.forceDouble = !node.ty.returnType.integral;
 
