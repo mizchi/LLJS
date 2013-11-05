@@ -60,7 +60,7 @@ var asm = (function (global, env, buffer) {
 var globalSP = 144;
 function testLocalArray() {
   var arr = 0, $SP = 0;
-  U4[1] = (U4[1] | 0) - 80;
+  U4[1] = (U4[1] | 0) - 80 | 0;
   $SP = U4[1] | 0;
   I4[(($SP) + (0 * 4 | 0)) >> 2] = 1;
   I4[(($SP) + (15 * 4 | 0)) >> 2] = 2;
@@ -68,13 +68,12 @@ function testLocalArray() {
   assertEqual(I4[(($SP) + (15 * 4 | 0)) >> 2] | 0, 2);
   I4[(((totalSize - globalSP | 0) + 64 | 0) + (10 * 4 | 0)) >> 2] = (I4[(((totalSize - globalSP | 0) + 64 | 0) + (10 * 4 | 0)) >> 2] | 0) + 1 | 0;
   U4[1] = (U4[1] | 0) + 80;
-  return 0.0;
 }
 function main() {
   var x = 0, y = 0, z = 0, $SP = 0;
   U4[1] = totalSize - 144;
   U4[0] = 4;
-  U4[1] = (U4[1] | 0) - 24;
+  U4[1] = (U4[1] | 0) - 24 | 0;
   $SP = U4[1] | 0;
   I4[(((totalSize - globalSP | 0) + 64 | 0) + (10 * 4 | 0)) >> 2] = 0;
   I4[($SP) >> 2] = 42;
@@ -90,7 +89,6 @@ function main() {
   testLocalArray();
   assertEqual(I4[(((totalSize - globalSP | 0) + 64 | 0) + (10 * 4 | 0)) >> 2] | 0, 3);
   U4[1] = (U4[1] | 0) + 24;
-  return 0.0;
 }
     function memcpy(dest, src, num) {
         dest = dest|0; src = src|0; num = num|0;

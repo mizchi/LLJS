@@ -88,19 +88,26 @@
       type = type || expr.ty;
 
       if(type.numeric && !type.integral) {
-        return cast(new UnaryExpression('+', expr), expr.ty);
+        return cast(new UnaryExpression('+', expr), type);
       }
-      else {
-        if(type.signed || forceSigned || type instanceof Types.PointerType) {
-          return cast(new BinaryExpression('|', expr, new Literal(0)), expr.ty);
-        }
-        else {
-          return cast(new BinaryExpression('>>>', expr, new Literal(0)), expr.ty);
-        }
+      else if((type.numeric && type.signed) || forceSigned || type instanceof Types.PointerType) {
+        return cast(new BinaryExpression('|', expr, new Literal(0)), type);
+      }
+      else if(type.numeric) {
+        return cast(new BinaryExpression('>>>', expr, new Literal(0)), type);
       }
     }
 
     return expr;
+  }
+
+  function cast(node, ty, force, really) {
+    if ((node.ty || force) && (node.ty !== ty || really)) {
+      node = new CastExpression(undefined, node, node.loc);
+      node.force = force;
+    }
+    node.ty = ty;
+    return node;
   }
 
   function isInteger(x) {
@@ -166,15 +173,6 @@
       return s.substring(1, s.length - 1);
     }
     return s;
-  }
-
-  function cast(node, ty, force, really) {
-    if ((node.ty || force) && (node.ty !== ty || really)) {
-      node = new CastExpression(undefined, node, node.loc);
-      node.force = force;
-    }
-    node.ty = ty;
-    return node;
   }
 
   function copy(node, ty) {

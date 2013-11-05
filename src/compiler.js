@@ -1600,14 +1600,14 @@
         if(ty.name == 'f32' || ty.name == 'f64') {
           var assn = new AssignmentExpression(
             new Identifier(p.name), '=',
-            new UnaryExpression("+", new Identifier(p.name))
+            forceType(new Identifier(p.name), Types.f64ty)
           );
           code.push(new ExpressionStatement(assn));
         }
         else {
           var assn = new AssignmentExpression(
             new Identifier(p.name), '=',
-            new BinaryExpression("|", new Identifier(p.name), literal(0))
+            forceType(new Identifier(p.name), Types.i32ty)
           );
           code.push(new ExpressionStatement(assn));
         }
@@ -1639,7 +1639,8 @@
     if(frameSize) {
       var allocStack = new AssignmentExpression(
         frame.realSP(), "=", 
-        new BinaryExpression("-", forceType(frame.realSP()), literal(frameSize))
+        forceType(new BinaryExpression("-", forceType(frame.realSP()), literal(frameSize)),
+                  Types.i32ty)
       );
 
       logger.push(allocStack);
@@ -1669,7 +1670,7 @@
                                  literal(frameSize))))
       ];
 
-      if(node.ty.returnType) {
+      if(node.ty.returnType && node.ty.returnType != Types.voidTy) {
         var unifyRetType = new ReturnStatement(
           new Literal(node.ty.returnType.integral ? 0 : 0.0)
         );
