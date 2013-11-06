@@ -46,6 +46,7 @@
   const NewExpression = T.NewExpression;
   const UpdateExpression = T.UpdateExpression;
   const LogicalExpression = T.LogicalExpression;
+  const IfStatement = T.IfStatement;
   const ForStatement = T.ForStatement;
   const BlockStatement = T.BlockStatement;
   const CatchClause = T.CatchClause;
@@ -581,7 +582,7 @@
     if(this === Types.voidTy) {
       return other === Types.voidTy;
     }
-      
+
     if (other instanceof PrimitiveType ||
         other instanceof PointerType) {
       return true;
@@ -711,7 +712,7 @@
             check(decl.init, ('Global variable ' + quote(decl.id) +
                               ' must have an initializer'));
             check(decl.init instanceof Literal,
-                  'Global variable ' + quote(decl.id) + 
+                  'Global variable ' + quote(decl.id) +
                   ' must be a constant literal');
             logger.pop();
           }
@@ -748,12 +749,52 @@
   FunctionDeclaration.prototype.transform = function (o) {
     o = extend(o);
     o.scope = this.frame;
-      
+
     assert(this.body instanceof BlockStatement);
     this.body.body = compileList(this.body.body, o);
     this.frame.close();
 
     return cast(this, this.decltype.reflect(o));
+  };
+
+  IfStatement.prototype.transformNode = function(o) {
+    if(o.asmjs &&
+       this.test instanceof LogicalExpression &&
+       (this.test.operator == '&&' || this.test.operator == '||')) {
+      var test = this.test;
+      var tmp = o.scope.freshTemp(Types.i32ty, test.loc);
+      var code = [new ExpressionStatement(
+          new AssignmentExpression(tmp, '=', literal(0))
+      )];
+
+      var assignTrue = new BlockStatement([
+        new ExpressionStatement(new AssignmentExpression(tmp, '=', literal(1)))
+      ]);
+
+      if(test.operator == '&&') {
+        code.push(new IfStatement(
+          test.left,
+          new BlockStatement([new IfStatement(
+            test.right,
+            assignTrue
+          )])
+        ).transform(o));
+      }
+      else if(test.operator == '||') {
+        code.push(new BlockStatement([
+          new IfStatement(test.left, assignTrue).transform(o),
+          new IfStatement(test.right, assignTrue).transform(o)
+        ]));
+      }
+
+      code.push(new BlockStatement([new IfStatement(
+        tmp,
+        this.consequent,
+        this.alternate
+      )]));
+
+      return new BlockStatement(code);
+    }
   };
 
   ForStatement.prototype.transform = function (o) {
@@ -847,7 +888,7 @@
     var transformed = [];
 
     for(var i=0; i<decls.length; i++) {
-      if((decl = decls[i].transform(o))) { 
+      if((decl = decls[i].transform(o))) {
         transformed.push(decl);
       }
     }
@@ -934,7 +975,7 @@
         }
 
         var assn = (new AssignmentExpression(left, "=", right, this.init.loc)).transform(o);
-        
+
         if(this.global) {
           this.id = assn.left;
           this.init = assn.right;
@@ -1549,7 +1590,7 @@
          variable.name != 'this' &&
          node.parameters.indexOf(variable) === -1) {
 
-          
+
 
         var decl = new VariableDeclarator(new Identifier(variable.name),
                                           new Literal((ty && ty.defaultValue) || 0));
@@ -1592,7 +1633,7 @@
       for (var i = 0, j = params.length; i < j; i++) {
         var p = params[i];
         var ty = p.type;
-          
+
         if(!ty) {
           continue;
         }
@@ -1638,7 +1679,7 @@
     var frameSize = frame.frameSize;
     if(frameSize) {
       var allocStack = new AssignmentExpression(
-        frame.realSP(), "=", 
+        frame.realSP(), "=",
         forceType(new BinaryExpression("-", forceType(frame.realSP()), literal(frameSize)),
                   Types.i32ty)
       );
@@ -1818,7 +1859,7 @@
       var exprList = [assn];
       if(o.asmjs && frameSize) {
         var restoreStack = new AssignmentExpression(
-            scope.frame.realSP(), "=", 
+            scope.frame.realSP(), "=",
             forceType(
                 new BinaryExpression(
                     "+", forceType(scope.frame.realSP()), literal(frameSize)
@@ -1920,7 +1961,7 @@
   function extractExterns(node) {
     var externs = [];
 
-    if(node instanceof Program) { 
+    if(node instanceof Program) {
       for(var i=0; i<node.body.length; i++) {
         var expr = node.body[i];
 
@@ -1993,7 +2034,7 @@
     // Pass 1.
     logger.info("Pass 1");
     types = resolveAndLintTypes(node, types || clone(Types.builtinTypes));
-    var o = { types: types, name: name, logger: _logger, memcheck: false, 
+    var o = { types: types, name: name, logger: _logger, memcheck: false,
               asmjs: options.asmjs, warn: warningOptions(options) };
 
     // Pass 2.
@@ -2009,7 +2050,7 @@
     node = node.lower(o);
 
     return {
-      externs: externs, 
+      externs: externs,
       node: T.flatten(node)
     };
   }

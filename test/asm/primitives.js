@@ -59,7 +59,7 @@ var asm = (function (global, env, buffer) {
 
 var globalSP = 64;
 function main() {
-  var _ = 0, x = 0, y = 0, z = 0.0, w = 0.0, i = 0, $SP = 0;
+  var _ = 0, _$1 = 0, _$2 = 0, _$3 = 0, _$4 = 0, x = 0, y = 0, z = 0.0, w = 0.0, i = 0, $SP = 0;
   U4[1] = totalSize - 64;
   U4[0] = 4;
   assertEqual(1, 1);
@@ -87,6 +87,67 @@ function main() {
   assertEqual(z / w, 0.85);
   assertEqual(z * w, 30.6);
   assertEqual(z * +(x | 0), 40.8);
+  x = 5;
+  if ((x | 0) > 3) {
+    x = 10;
+  }
+  assertEqual(x | 0, 10);
+  x = 5;
+  {
+    _ = 0;
+    {
+      _$1 = 0;
+      if ((x | 0 | 0 | 0) > 3) {
+        if ((x | 0 | 0 | 0) < 10) {
+          _$1 = 1;
+        }
+      }
+      {
+        if (_$1) {
+          if (1) {
+            _ = 1;
+          }
+        }
+      }
+    }
+    {
+      if (_) {
+        x = 15;
+      }
+    }
+  }
+  x = 5;
+  y = 6;
+  {
+    _$2 = 0;
+    {
+      {
+        _$3 = 0;
+        {
+          if ((x | 0 | 0 | 0) > 1) {
+            _$3 = 1;
+          }
+          if ((y | 0 | 0 | 0) > 10) {
+            _$3 = 1;
+          }
+        }
+        {
+          if (_$3) {
+            _$2 = 1;
+          }
+        }
+      }
+      if (0) {
+        _$2 = 1;
+      }
+    }
+    {
+      if (_$2) {
+        x = 15;
+      }
+    }
+  }
+  assertEqual(x | 0, 15);
   x = 0;
   y = 1;
   while ((x | 0) < 10) {
@@ -95,7 +156,7 @@ function main() {
   }
   assertEqual(y | 0, 1024);
   y = 1;
-  for (i = 0; (i | 0) < 10; _ = i, i = (i | 0) + 1 | 0, _) {
+  for (i = 0; (i | 0) < 10; _$4 = i, i = (i | 0) + 1 | 0, _$4) {
     y = imul(y, 2) | 0;
   }
   assertEqual(y | 0, 1024);
