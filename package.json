@@ -1,0 +1,25 @@
+{
+  "name": "LLJS",
+  "version": "0.0.0",
+  "description": "LLJS",
+  "main": "index.js",
+  "bin": {
+    "ljc":"bin/ljc"
+  },
+  "directories": {
+    "doc": "docs",
+    "test": "test"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git://github.com/jlongster/LLJS.git"
+  },
+  "author": "",
+  "license": "BSD-2-Clause",
+  "bugs": {
+    "url": "https://github.com/jlongster/LLJS/issues"
+  }
+}
